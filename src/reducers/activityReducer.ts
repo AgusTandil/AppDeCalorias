@@ -8,12 +8,14 @@ export type ActivityActions =
   | {
       type: "set-activeId";
       payload: { id: Activity["id"] };
-    } 
-  |
-    {
+    }
+  | {
       type: "delete-activity";
       payload: { id: Activity["id"] };
-    };
+    } |
+    {
+      type: "restart-app"; // Como borra todo no toma payload.
+    }
 
 
 export type ActivityState = {
@@ -21,8 +23,23 @@ export type ActivityState = {
   activeId: Activity["id"];
 };
 
+const localStorageActivities = (): Activity[] => {
+  try {
+    const activities = localStorage.getItem("activities");
+    if (!activities) return [];
+
+    const parsed = JSON.parse(activities);
+
+    // Asegura que es un array antes de retornarlo
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    console.warn("Error parsing localStorage activities:", e);
+    return [];
+  }
+};
+
 export const initialState: ActivityState = {
-  activities: [],
+  activities: localStorageActivities(),
   activeId: "",
 };
 
@@ -44,7 +61,7 @@ export const activityReducer = (
     return {
       ...state,
       activities: updatedActivities,
-      activeId:''
+      activeId: "",
     };
   }
   if (action.type === "set-activeId") {
@@ -54,14 +71,23 @@ export const activityReducer = (
     };
   }
 
-  if(action.type === 'delete-activity'){
+  if (action.type === "delete-activity") {
     return {
       ...state,
-      activities: state.activities.filter(activity => activity.id !== action.payload.id)
+      activities: state.activities.filter(
+        (activity) => activity.id !== action.payload.id
+      ),
+    };
+  }
+
+  if(action.type === 'restart-app'){
+
+    return {
+      activities:[],
+      activeId: ''
     }
 
   }
-
 
   return state;
 };
